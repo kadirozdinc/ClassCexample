@@ -7,7 +7,7 @@ const char *devEui = "80B3D57ED004397D";
 const char *appEui = "1300000000000013";
 const char *appKey = "47521E11573093C237C7333983DD475C";
 
-const unsigned long interval = 15000; // 10 s interval to send message
+const unsigned long interval = 20 * 1000; // 10 s interval to send message
 unsigned long previousMillis = 0;     // will store last time message sent
 unsigned int counter = 0;             // message counter
 
@@ -43,7 +43,8 @@ void setup()
   lora.setDeviceClass(CLASS_C);
 
   // Set Data Rate
-  lora.setDataRate(SF8BW125);
+  lora.setDataRate(SF7BW125);
+  //lora.setTxPower1(0x0F); // set max power.
 
   // set channel to random
   lora.setChannel(MULTI);
@@ -64,43 +65,35 @@ void setup()
     delay(10000);
   } while (!isJoined);
   Serial.println("Joined to network");
-
-  sprintf(myStr, "First-%d", counter);
-
-  Serial.print("Sending: ");
-  Serial.println(myStr);
-  lora.sendUplink(myStr, strlen(myStr), 0, 1);
 }
 
-void loop()
-{
+void loop() {
   // Check interval overflow
-  if (millis() - previousMillis > interval)
-  {
-    previousMillis = millis();
+  if(millis() - previousMillis > interval) {
+    previousMillis = millis(); 
 
-    sprintf(myStr, "Counter-%d", counter);
+    sprintf(myStr, "Counter-%d", counter); 
 
     Serial.print("Sending: ");
     Serial.println(myStr);
-    //data,length,confirmed?,port
-    lora.sendUplink(myStr, strlen(myStr), 0, 1);
+    
+    lora.sendUplink(myStr, strlen(myStr), 1, 1);
     counter++;
-    // Serial.println(lora.readAck());
+    delay(10);
+   
   }
 
   recvStatus = lora.readData(outStr);
-  if (recvStatus)
-  {
-    Serial.println(lora.getRssi());
-    Serial.println(outStr);
-    if (outStr[0] == 0x41) // A gelmişse led on
-      digitalWrite(LED, HIGH);
-    else
-      digitalWrite(LED, LOW); // farklı veri ise off
-  }
+  if(recvStatus) {
+    Serial.println(recvStatus);
 
+    Serial.println(outStr);
+  }
+  
   // Check Lora RX
   lora.update();
 
+    //  if(lora.readAck()) Serial.println("ack received");
+
+ 
 }
